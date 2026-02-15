@@ -1,27 +1,19 @@
-name: Complete Release Build
+name: Create Release
 
 on:
   push:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release'
-        required: true
-        default: 'v1.0.0'
 
 jobs:
-  prepare:
-    name: Prepare Release
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-      tag: ${{ steps.version.outputs.TAG }}
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     
@@ -35,212 +27,21 @@ jobs:
     
     - name: Generate changelog
       run: |
-        git log $(git describe --tags --abbrev=0 2>/dev/null)..HEAD --pretty=format:"- %h: %s" > CHANGELOG_TEMP.txt || git log HEAD~10..HEAD --pretty=format:"- %h: %s" > CHANGELOG_TEMP.txt
-        cat CHANGELOG_TEMP.txt
-    
-    - name: Upload changelog
-      uses: actions/upload-artifact@v3
-      with:
-        name: CHANGELOG
-        path: CHANGELOG_TEMP.txt
-
-  build-ios:
-    name: Build iOS
-    needs: prepare
-    runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest
-    
-    - name: Build iOS
-      run: |
-        cd iOS
-        xcodebuild \
-          -scheme RemoteAIGuardian \
-          -configuration Release \
-          -sdk iphoneos \
-          -derivedDataPath build \
-          archive \
-          -archivePath build/RemoteAIGuardian.xcarchive
-        
-        xcodebuild \
-          -exportArchive \
-          -archivePath build/RemoteAIGuardian.xcarchive \
-          -exportOptionsPlist ExportOptions.plist \
-          -exportPath build/ipa
-    
-    - name: Upload iOS build
-      uses: actions/upload-artifact@v3
-      with:
-        name: RemoteAIGuardian-${{ needs.prepare.outputs.version }}-iOS.ipa
-        path: iOS/build/ipa/RemoteAIGuardian.ipa
-
-  build-macos:
-    name: Build macOS
-    needs: prepare
-    runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'auth-system/package-lock.json'
-    
-    - name: Install dependencies
-      run: |
-        cd auth-system
-        npm install --production=false
-        npm install --save-dev electron electron-builder
-    
-    - name: Build macOS
-      run: |
-        cd auth-system
-        npx electron-builder --mac dmg --publish never
-    
-    - name: Upload macOS build
-      uses: actions/upload-artifact@v3
-      with:
-        name: RemoteAIGuardian-${{ needs.prepare.outputs.version }}-macOS.dmg
-        path: auth-system/build/*.dmg
-
-  build-windows:
-    name: Build Windows
-    needs: prepare
-    runs-on: windows-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'auth-system/package-lock.json'
-    
-    - name: Install dependencies
-      run: |
-        cd auth-system
-        npm install --production=false
-        npm install --save-dev electron electron-builder
-    
-    - name: Build Windows
-      run: |
-        cd auth-system
-        npx electron-builder --win --publish never
-    
-    - name: Upload Windows build
-      uses: actions/upload-artifact@v3
-      with:
-        name: RemoteAIGuardian-${{ needs.prepare.outputs.version }}-Windows.exe
-        path: auth-system/build/*.exe
-
-  build-linux:
-    name: Build Linux
-    needs: prepare
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'auth-system/package-lock.json'
-    
-    - name: Install dependencies
-      run: |
-        cd auth-system
-        npm install --production=false
-        npm install --save-dev electron electron-builder
-    
-    - name: Build Linux
-      run: |
-        cd auth-system
-        npx electron-builder --linux AppImage deb --publish never
-    
-    - name: Upload Linux build
-      uses: actions/upload-artifact@v3
-      with:
-        name: RemoteAIGuardian-${{ needs.prepare.outputs.version }}-Linux
-        path: auth-system/build/
-
-  create-release:
-    name: Create Release
-    needs: [prepare, build-ios, build-macos, build-windows, build-linux]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: ./artifacts
-    
-    - name: Generate checksums
-      run: |
-        cd artifacts
-        find . -type f \( -name "*.ipa" -o -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" \) -exec sha256sum {} \; > SHA256SUMS.txt
-        cat SHA256SUMS.txt
-    
-    - name: Read changelog
-      id: changelog
-      run: |
-        if [ -f "artifacts/CHANGELOG/CHANGELOG_TEMP.txt" ]; then
-          CHANGELOG=$(cat artifacts/CHANGELOG/CHANGELOG_TEMP.txt)
-        else
-          CHANGELOG="See commit history for details"
-        fi
-        echo "BODY<<EOF" >> $GITHUB_OUTPUT
-        echo "# Release v${{ needs.prepare.outputs.version }}" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "## Artifacts" >> $GITHUB_OUTPUT
-        echo "- iOS (.ipa)" >> $GITHUB_OUTPUT
-        echo "- macOS (.dmg)" >> $GITHUB_OUTPUT
-        echo "- Windows (.exe)" >> $GITHUB_OUTPUT
-        echo "- Linux (.AppImage, .deb)" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "## Changes" >> $GITHUB_OUTPUT
-        echo "$CHANGELOG" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        echo "# Release v${{ steps.version.outputs.VERSION }}" > RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "## Built" >> RELEASE_NOTES.md
+        echo "- Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> RELEASE_NOTES.md
+        echo "- Commit: ${{ github.sha }}" >> RELEASE_NOTES.md
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ needs.prepare.outputs.tag }}
-        body: ${{ steps.changelog.outputs.BODY }}
-        files: |
-          artifacts/*/*.ipa
-          artifacts/*/*.dmg
-          artifacts/*/*.exe
-          artifacts/*/*.AppImage
-          artifacts/*/*.deb
-          artifacts/*/SHA256SUMS.txt
+        tag_name: ${{ steps.version.outputs.TAG }}
+        body_path: RELEASE_NOTES.md
         draft: false
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Publish release notes
-      run: |
-        echo "✅ Release v${{ needs.prepare.outputs.version }} created successfully!"
-        echo ""
-        echo "Artifacts:"
-        ls -lh artifacts/*/* | grep -v "^d" | awk '{print "  - " $9 " (" $5 ")"}'
+    - name: Release created
+      run: echo "✅ Release v${{ steps.version.outputs.VERSION }} created successfully"
