@@ -136,21 +136,21 @@ jobs:
         cat checksums.txt
     
     - name: Upload DMG artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-${{ steps.version.outputs.VERSION }}-macos.dmg
         path: auth-system/build/*.dmg
         retention-days: 30
     
     - name: Upload ZIP artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-${{ steps.version.outputs.VERSION }}-macos.zip
         path: auth-system/build/*.zip
         retention-days: 30
     
     - name: Upload checksums
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-${{ steps.version.outputs.VERSION }}-checksums
         path: auth-system/build/checksums.txt

@@ -98,14 +98,14 @@ jobs:
     
     - name: Upload Simulator Build
       if: ${{ inputs.build_type != 'production' }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-Simulator-${{ steps.version.outputs.VERSION }}
         path: iOS/build/Release-iphonesimulator/
         retention-days: 7
     
     - name: Upload Device Build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-Device-${{ steps.version.outputs.VERSION }}
         path: iOS/build/Release-iphoneos/
@@ -113,7 +113,7 @@ jobs:
     
     - name: Upload IPA
       if: ${{ inputs.build_type == 'production' }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: RemoteAIGuardian-${{ steps.version.outputs.VERSION }}.ipa
         path: iOS/build/ipa/RemoteAIGuardian.ipa
