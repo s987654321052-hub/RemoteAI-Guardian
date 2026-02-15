@@ -2,7 +2,7 @@
 
 /**
  * 最終版本 - Railway 啟動腳本
- * 完全簡化，只做一件事：啟動 Express 服務器
+ * 強制使用 3000 端口（不讀取環境變數）
  */
 
 console.log('[START] 應用初始化開始...');
@@ -40,9 +40,9 @@ app.use((req, res) => {
   res.status(404).json({ error: 'not found' });
 });
 
-// 啟動
-const PORT = parseInt(process.env.PORT) || 3000;
-console.log('[CONFIG] PORT =', PORT);
+// 強制使用 3000（不讀取 PORT 環境變數）
+const PORT = 3000;
+console.log('[CONFIG] 端口: ' + PORT + ' (硬寫死)');
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('[SUCCESS] 伺服器已啟動');
