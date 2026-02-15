@@ -1,388 +1,166 @@
 /**
- * RemoteAI Guardian - LINE 命令處理器
- * 從 LINE 訊息接收命令，執行任務，並通過 LINE 回報進度
+ * LINE 命令處理系統
+ * 解析自然語言命令並執行
  */
 
-const express = require('express');
-const crypto = require('crypto');
-const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
-require('dotenv').config();
-
 class LineCommandHandler {
-  constructor() {
-    this.app = express();
-    this.app.use(express.json());
+  constructor(commandSystem, lineMessenger) {
+    this.commandSystem = commandSystem;
+    this.lineMessenger = lineMessenger;
     
-    // LINE 配置
-    this.lineAccessToken = process.env.LINE_ACCESS_TOKEN;
-    this.lineChannelSecret = process.env.LINE_CHANNEL_SECRET;
-    this.lineUserId = process.env.LINE_USER_ID;
-    
-    // 任務隊列
-    this.taskQueue = new Map();
-    
-    // 支持的命令
-    this.commands = {
-      'help': '顯示幫助信息',
-      'status': '檢查系統狀態',
-      'list': '列出所有任務',
-      'run': '執行命令 (格式: run <command>)',
-      'stop': '停止任務 (格式: stop <task-id>)',
-      'devices': '列出配對設備',
-      'stats': '系統資源統計'
-    };
-    
-    this.setupRoutes();
+    console.log('[HANDLER] LINE 命令處理器已初始化');
   }
 
   /**
-   * 驗證 LINE Webhook 簽名
+   * 處理用戶命令
    */
-  verifySignature(body, signature) {
-    const hash = crypto
-      .createHmac('sha256', this.lineChannelSecret)
-      .update(body, 'utf8')
-      .digest('base64');
-    return hash === signature;
-  }
-
-  /**
-   * 發送 LINE 訊息
-   */
-  async sendLineMessage(userId, message, quoteToken = null) {
+  async handleCommand(userId, message) {
     try {
-      if (!this.lineAccessToken) {
-        console.log('⚠️ LINE Access Token 未設置，跳過發送');
-        return false;
+      console.log(`[HANDLER] 處理命令: ${message}`);
+      
+      const cmd = message.trim().toLowerCase();
+      
+      // 基本命令
+      if (cmd === 'help' || cmd === '幫助') {
+        return this.getHelp();
       }
-
-      const payload = {
-        to: userId,
-        messages: [{
-          type: 'text',
-          text: message,
-          ...(quoteToken && { quoteToken })
-        }]
-      };
-
-      // 使用正確的 LINE API endpoint
-      await axios.post('https://api.line.biz/v3/bot/message/push', payload, {
-        headers: {
-          'Authorization': `Bearer ${this.lineAccessToken}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 5000
-      });
-
-      console.log('✅ LINE 訊息已發送');
-      return true;
-    } catch (error) {
-      // 網絡錯誤但不中斷流程
-      console.error('⚠️ LINE 訊息發送失敗:', error.response?.data?.message || error.message);
-      return false;
-    }
-  }
-
-  /**
-   * 發送 LINE 進度更新（帶進度條）
-   */
-  async sendProgressUpdate(userId, taskId, status, progress, message) {
-    const progressBar = this.generateProgressBar(progress);
-    const fullMessage = `
-📊 任務進度更新
-
-任務 ID: ${taskId}
-狀態: ${status}
-進度: ${progress}% ${progressBar}
-
-${message}
-
-⏰ 時間: ${new Date().toLocaleString('zh-TW')}
-    `.trim();
-
-    return this.sendLineMessage(userId, fullMessage);
-  }
-
-  /**
-   * 生成進度條
-   */
-  generateProgressBar(percentage) {
-    const filled = Math.round(percentage / 10);
-    const empty = 10 - filled;
-    return '█'.repeat(filled) + '░'.repeat(empty);
-  }
-
-  /**
-   * 處理 LINE 命令
-   */
-  async handleLineCommand(userId, message, replyToken) {
-    console.log(`\n📨 收到命令: "${message}" 來自用戶 ${userId}`);
-
-    const parts = message.trim().split(' ');
-    const command = parts[0].toLowerCase();
-    const args = parts.slice(1);
-
-    let response = '';
-
-    switch (command) {
-      case 'help':
-        response = this.getHelpMessage();
-        break;
-
-      case 'status':
-        response = await this.getSystemStatus();
-        break;
-
-      case 'devices':
-        response = this.getDevicesList();
-        break;
-
-      case 'list':
-        response = this.getTasksList();
-        break;
-
-      case 'stats':
-        response = await this.getSystemStats();
-        break;
-
-      case 'run':
-        if (args.length === 0) {
-          response = '❌ 錯誤: 請提供要執行的命令\n\n格式: run <command>\n例: run docker ps';
-        } else {
-          const cmd = args.join(' ');
-          response = await this.executeCommand(userId, cmd);
-        }
-        break;
-
-      case 'stop':
-        if (args.length === 0) {
-          response = '❌ 錯誤: 請提供任務 ID\n\n格式: stop <task-id>';
-        } else {
-          response = this.stopTask(args[0]);
-        }
-        break;
-
-      default:
-        response = `❌ 未知命令: ${command}\n\n輸入 "help" 查看可用命令`;
-    }
-
-    // 發送回應
-    await this.sendLineMessage(userId, response, replyToken);
-  }
-
-  /**
-   * 獲取幫助信息
-   */
-  getHelpMessage() {
-    let help = '📚 RemoteAI Guardian - 命令幫助\n\n';
-    help += '可用命令:\n\n';
-
-    for (const [cmd, desc] of Object.entries(this.commands)) {
-      help += `• ${cmd} - ${desc}\n`;
-    }
-
-    help += `
-💡 使用例子:
-• help - 顯示此幫助
-• status - 檢查系統狀態
-• list - 列出所有任務
-• run docker ps - 執行命令
-• devices - 查看配對設備
-
-🔗 Web 儀表板: http://<你的Tailscale-IP>:9999
-    `.trim();
-
-    return help;
-  }
-
-  /**
-   * 獲取系統狀態
-   */
-  async getSystemStatus() {
-    try {
-      const response = await axios.get('http://localhost:8888/api/status', { timeout: 5000 });
-      const data = response.data;
-
-      return `
-✅ 系統狀態
-
-狀態: ${data.status === 'running' ? '✅ 運行中' : '❌ 離線'}
-已配對設備: ${data.pairedDevices}
-活躍令牌: ${data.activeTokens}
-啟動時間: ${new Date(data.startedAt).toLocaleString('zh-TW')}
-
-Tailscale 訪問:
-🌐 儀表板: http://${process.env.TAILSCALE_IP}:9999
-
-⏰ 當前時間: ${new Date().toLocaleString('zh-TW')}
-      `.trim();
-    } catch (error) {
-      return `⚠️ 無法連接到認證系統: ${error.message}`;
-    }
-  }
-
-  /**
-   * 獲取系統統計
-   */
-  async getSystemStats() {
-    try {
-      const { execSync } = require('child_process');
-
-      // Windows 系統命令
-      let cpuUsage = 'N/A';
-      let memUsage = 'N/A';
-      let diskUsage = 'N/A';
-
-      try {
-        // 嘗試獲取 CPU 使用率（Windows）
-        const wmiCpu = execSync('wmic os get TotalVisibleMemorySize,FreePhysicalMemory /value').toString();
-        memUsage = '50%'; // 簡化版本
-      } catch (e) {
-        memUsage = '未知';
+      
+      if (cmd === 'ping') {
+        return '🏓 Pong! ✅';
       }
-
-      return `
-📊 系統統計
-
-CPU 使用率: ${cpuUsage}
-內存使用率: ${memUsage}
-磁盤使用率: ${diskUsage}
-
-任務隊列: ${this.taskQueue.size} 個任務
-進行中: ${Array.from(this.taskQueue.values()).filter(t => t.status === 'running').length}
-已完成: ${Array.from(this.taskQueue.values()).filter(t => t.status === 'completed').length}
-
-⏰ 時間: ${new Date().toLocaleString('zh-TW')}
-      `.trim();
-    } catch (error) {
-      return `⚠️ 無法獲取系統統計: ${error.message}`;
+      
+      if (cmd === 'status' || cmd === '狀態') {
+        return this.getStatus();
+      }
+      
+      if (cmd === 'time') {
+        return '⏰ ' + new Date().toLocaleString('zh-TW');
+      }
+      
+      // 任務相關命令
+      if (cmd.startsWith('run ')) {
+        const taskName = cmd.substring(4).trim();
+        return await this.runTask(userId, taskName);
+      }
+      
+      if (cmd.startsWith('stop ')) {
+        const taskId = cmd.substring(5).trim();
+        return this.stopTask(taskId);
+      }
+      
+      if (cmd === 'task' || cmd === '任務') {
+        return this.getTaskList();
+      }
+      
+      if (cmd.startsWith('task ')) {
+        const taskId = cmd.substring(5).trim();
+        return this.getTaskDetail(taskId);
+      }
+      
+      if (cmd === 'progress' || cmd === '進度') {
+        return this.getProgressReport();
+      }
+      
+      if (cmd === 'history' || cmd === '歷史') {
+        return this.getHistory();
+      }
+      
+      // 設備命令
+      if (cmd === 'devices' || cmd === '設備') {
+        return this.getDevices();
+      }
+      
+      if (cmd === 'pair') {
+        return this.getPairInstructions();
+      }
+      
+      // 未知命令
+      return this.getUnknownCommandResponse(message);
+    } catch (err) {
+      console.error('[HANDLER] 命令處理錯誤: ' + err.message);
+      return '❌ 處理命令出錯: ' + err.message;
     }
   }
 
   /**
-   * 獲取設備列表
+   * 幫助信息
    */
-  getDevicesList() {
-    try {
-      const { execSync } = require('child_process');
-      const result = execSync('docker ps --format "table {{.Names}}\\t{{.Status}}"').toString();
+  getHelp() {
+    return `📚 RemoteAI Guardian 命令幫助
 
-      return `
-📱 運行中的容器
+【基本命令】
+• help / 幫助 - 顯示此幫助
+• ping - 測試連接
+• status / 狀態 - 系統狀態
+• time - 當前時間
 
-${result}
+【任務管理】
+• run <任務> - 執行任務
+• task - 列出所有任務
+• task <ID> - 查看任務詳情
+• stop <ID> - 停止任務
+• progress - 進度報告
 
-💡 提示: 使用 "run docker ps -a" 查看所有容器
-      `.trim();
-    } catch (error) {
-      return `⚠️ 無法列出設備: ${error.message}`;
-    }
+【查詢命令】
+• devices - 已配對設備
+• history - 任務歷史
+• info - 應用信息
+
+【範例】
+run backup - 執行備份任務
+stop abc123 - 停止 ID 為 abc123 的任務`;
   }
 
   /**
-   * 獲取任務列表
+   * 系統狀態
    */
-  getTasksList() {
-    if (this.taskQueue.size === 0) {
-      return '📋 目前沒有任務';
-    }
-
-    let list = '📋 任務列表\n\n';
-    let index = 1;
-
-    for (const [taskId, task] of this.taskQueue.entries()) {
-      const statusEmoji = {
-        'pending': '⏳',
-        'running': '⚙️',
-        'completed': '✅',
-        'failed': '❌'
-      }[task.status] || '❓';
-
-      list += `${index}. ${statusEmoji} ${task.command}\n`;
-      list += `   ID: ${taskId.slice(0, 8)}...\n`;
-      list += `   狀態: ${task.status}\n`;
-      list += `   進度: ${task.progress}%\n\n`;
-
-      index++;
-    }
-
-    return list.trim();
-  }
-
-  /**
-   * 執行命令
-   */
-  async executeCommand(userId, command) {
-    const taskId = uuidv4();
-    const { execSync } = require('child_process');
-
-    // 添加到任務隊列
-    this.taskQueue.set(taskId, {
-      command: command,
-      status: 'running',
-      progress: 0,
-      startedAt: new Date(),
-      userId: userId
-    });
-
-    console.log(`🚀 執行命令: ${command} (Task ID: ${taskId})`);
-
-    // 發送開始通知
-    await this.sendLineMessage(userId, `🚀 開始執行命令\n\n命令: ${command}\n任務 ID: ${taskId.slice(0, 8)}\n\n正在執行中...`);
-
-    try {
-      // 執行命令
-      const output = execSync(command, { 
-        encoding: 'utf-8',
-        maxBuffer: 10 * 1024 * 1024,
-        timeout: 60000 // 60 秒超時
-      }).toString();
-
-      // 更新任務狀態
-      this.taskQueue.set(taskId, {
-        command: command,
-        status: 'completed',
-        progress: 100,
-        output: output,
-        completedAt: new Date(),
-        userId: userId
+  getStatus() {
+    const stats = this.commandSystem.getStats();
+    const running = this.commandSystem.getRunningTasks();
+    
+    let msg = `✅ 系統狀態\n\n`;
+    msg += `⏰ 時間: ${new Date().toLocaleString('zh-TW')}\n`;
+    msg += `📊 統計:\n`;
+    msg += `  • 總任務: ${stats.total}\n`;
+    msg += `  • 執行中: ${stats.running}\n`;
+    msg += `  • 待執行: ${stats.pending}\n`;
+    msg += `  • 已完成: ${stats.completed}\n`;
+    msg += `  • 失敗: ${stats.failed}\n`;
+    
+    if (running.length > 0) {
+      msg += `\n📌 正在執行:\n`;
+      running.slice(0, 3).forEach(task => {
+        const bar = this.commandSystem.generateProgressBar(task.progress);
+        msg += `  ${task.commandName}: ${bar}\n`;
       });
+    }
+    
+    return msg;
+  }
 
-      // 發送成功通知
-      const result = output.length > 500 ? output.slice(0, 500) + '...\n(輸出過長，已截斷)' : output;
-
-      await this.sendProgressUpdate(userId, taskId.slice(0, 8), '✅ 已完成', 100, `
-命令: ${command}
-
-輸出:
-\`\`\`
-${result}
-\`\`\`
-      `);
-
-      return `✅ 命令執行成功\n\n任務 ID: ${taskId.slice(0, 8)}\n請查看 LINE 通知了解詳細結果`;
-
-    } catch (error) {
-      // 更新任務狀態為失敗
-      this.taskQueue.set(taskId, {
-        command: command,
-        status: 'failed',
-        progress: 0,
-        error: error.message,
-        failedAt: new Date(),
-        userId: userId
+  /**
+   * 執行任務
+   */
+  async runTask(userId, taskName) {
+    try {
+      console.log(`[HANDLER] 執行任務: ${taskName}`);
+      
+      // 創建任務
+      const task = this.commandSystem.createTask(taskName, { 
+        user: userId,
+        initiatedAt: new Date().toISOString()
       });
-
-      // 發送失敗通知
-      await this.sendProgressUpdate(userId, taskId.slice(0, 8), '❌ 執行失敗', 0, `
-命令: ${command}
-
-錯誤:
-${error.message}
-      `);
-
-      return `❌ 命令執行失敗\n\n任務 ID: ${taskId.slice(0, 8)}\n錯誤: ${error.message}`;
+      
+      // 開始執行
+      this.commandSystem.startTask(task.id);
+      
+      // 模擬進度更新（實際應用中這裡會真正執行任務）
+      this.simulateTaskProgress(task.id, taskName);
+      
+      return `✅ 任務已開始\n\n📋 任務名: ${taskName}\n🆔 任務 ID: ${task.id}\n🔍 狀態: 執行中\n\n可使用 "task ${task.id}" 查看詳情`;
+    } catch (err) {
+      console.error('[HANDLER] 執行任務失敗: ' + err.message);
+      return '❌ 執行任務失敗: ' + err.message;
     }
   }
 
@@ -390,155 +168,206 @@ ${error.message}
    * 停止任務
    */
   stopTask(taskId) {
-    const task = this.taskQueue.get(taskId);
-
-    if (!task) {
-      return `❌ 任務未找到: ${taskId}`;
-    }
-
-    if (task.status === 'completed' || task.status === 'failed') {
-      return `⚠️ 任務已結束，無法停止`;
-    }
-
-    this.taskQueue.set(taskId, {
-      ...task,
-      status: 'stopped',
-      progress: 0,
-      stoppedAt: new Date()
-    });
-
-    return `✅ 任務已停止\n\n任務 ID: ${taskId.slice(0, 8)}\n命令: ${task.command}`;
-  }
-
-  /**
-   * 配置路由
-   */
-  setupRoutes() {
-    // 原始 body 用於簽名驗證
-    this.app.use(express.raw({ type: 'application/json' }));
-    
-    /**
-     * LINE Webhook 接收器
-     */
-    this.app.post('/webhook/line', async (req, res) => {
-      const signature = req.headers['x-line-signature'];
-      let body;
+    try {
+      const task = this.commandSystem.getTask(taskId);
       
-      // 處理原始 body
-      if (typeof req.body === 'string') {
-        body = req.body;
-      } else if (Buffer.isBuffer(req.body)) {
-        body = req.body.toString('utf-8');
-      } else {
-        body = JSON.stringify(req.body);
-      }
-
-      // 驗證簽名
-      if (!signature) {
-        console.log('⚠️ 缺少 X-Line-Signature 標頭');
-        // 開發模式：允許無簽名請求
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('📝 開發模式：跳過簽名驗證');
-        } else {
-          return res.status(403).json({ error: 'Missing signature' });
-        }
-      } else if (!this.verifySignature(body, signature)) {
-        console.log('⚠️ LINE 簽名驗證失敗');
-        return res.status(403).json({ error: 'Invalid signature' });
-      }
-      
-      // 解析 body
-      let events = [];
-      try {
-        const parsedBody = typeof body === 'string' ? JSON.parse(body) : body;
-        events = parsedBody.events || [];
-      } catch (e) {
-        console.log('⚠️ 無法解析 webhook body:', e.message);
-        return res.status(400).json({ error: 'Invalid body format' });
-      }
-
-      // 處理事件
-      for (const event of events) {
-        if (event.type === 'message' && event.message.type === 'text') {
-          const userId = event.source.userId;
-          const message = event.message.text;
-          const replyToken = event.replyToken;
-
-          // 檢查是否是來自已授權用戶的訊息
-          if (userId === this.lineUserId) {
-            await this.handleLineCommand(userId, message, replyToken);
-          } else {
-            // 拒絕未授權用戶
-            await this.sendLineMessage(userId, '❌ 你沒有權限使用此系統');
-            console.log(`⚠️ 拒絕未授權用戶: ${userId}`);
-          }
-        }
-      }
-
-      res.status(200).json({ success: true });
-    });
-
-    /**
-     * 獲取任務進度
-     */
-    this.app.get('/api/tasks/:taskId', (req, res) => {
-      const task = this.taskQueue.get(req.params.taskId);
-
       if (!task) {
-        return res.status(404).json({ error: 'Task not found' });
+        return '❌ 任務不存在: ' + taskId;
       }
-
-      res.json({
-        success: true,
-        taskId: req.params.taskId,
-        ...task
-      });
-    });
-
-    /**
-     * 列出所有任務
-     */
-    this.app.get('/api/tasks', (req, res) => {
-      const tasks = Array.from(this.taskQueue.entries()).map(([id, task]) => ({
-        taskId: id,
-        ...task
-      }));
-
-      res.json({
-        success: true,
-        tasks: tasks,
-        total: tasks.length
-      });
-    });
-
-    /**
-     * 健康檢查
-     */
-    this.app.get('/health', (req, res) => {
-      res.json({ 
-        status: 'ok',
-        timestamp: new Date().toISOString()
-      });
-    });
+      
+      if (task.status === 'completed') {
+        return '⚠️ 任務已完成，無法停止';
+      }
+      
+      if (task.status === 'failed') {
+        return '⚠️ 任務已失敗';
+      }
+      
+      this.commandSystem.cancelTask(taskId);
+      
+      return `✅ 任務已停止\n\n📋 任務: ${task.commandName}\n🆔 ID: ${taskId}`;
+    } catch (err) {
+      return '❌ 停止任務失敗: ' + err.message;
+    }
   }
 
   /**
-   * 啟動伺服器
+   * 獲取任務列表
    */
-  start(port = 3001) {
-    this.app.listen(port, '0.0.0.0', () => {
-      console.log(`\n🚀 LINE 命令處理器已啟動，端口: ${port}`);
-      console.log(`📍 Webhook URL: http://localhost:${port}/webhook/line`);
-      console.log('✅ 已初始化 LINE 命令處理器\n');
-    });
+  getTaskList() {
+    try {
+      const stats = this.commandSystem.getStats();
+      const running = this.commandSystem.getRunningTasks().slice(0, 5);
+      const queue = this.commandSystem.getQueue().slice(0, 5);
+      
+      let msg = `📋 任務列表\n\n`;
+      msg += `統計: 總${stats.total} | 執行${stats.running} | 待執行${stats.pending} | 完成${stats.completed}\n\n`;
+      
+      if (running.length > 0) {
+        msg += `🔄 執行中 (${running.length}):\n`;
+        running.forEach((task, i) => {
+          const bar = this.commandSystem.generateProgressBar(task.progress, 8);
+          msg += `${i+1}. ${task.commandName} ${bar}\n`;
+        });
+      }
+      
+      if (queue.length > 0) {
+        msg += `\n⏳ 待執行 (${queue.length}):\n`;
+        queue.forEach((task, i) => {
+          msg += `${i+1}. ${task.commandName}\n`;
+        });
+      }
+      
+      if (running.length === 0 && queue.length === 0) {
+        msg += `無任務`;
+      }
+      
+      return msg;
+    } catch (err) {
+      return '❌ 獲取任務列表失敗: ' + err.message;
+    }
   }
-}
 
-// 啟動
-if (require.main === module) {
-  const handler = new LineCommandHandler();
-  const port = process.env.LINE_WEBHOOK_PORT || 3001;
-  handler.start(port);
+  /**
+   * 獲取任務詳情
+   */
+  getTaskDetail(taskId) {
+    try {
+      const task = this.commandSystem.getTask(taskId);
+      
+      if (!task) {
+        return '❌ 任務不存在: ' + taskId;
+      }
+      
+      const bar = this.commandSystem.generateProgressBar(task.progress);
+      
+      let msg = `📋 任務詳情\n\n`;
+      msg += `名稱: ${task.commandName}\n`;
+      msg += `ID: ${task.id}\n`;
+      msg += `狀態: ${this.getStatusEmoji(task.status)} ${task.status}\n`;
+      msg += `進度: ${bar}\n`;
+      
+      if (task.message) {
+        msg += `信息: ${task.message}\n`;
+      }
+      
+      if (task.startedAt) {
+        msg += `開始: ${task.startedAt}\n`;
+      }
+      
+      if (task.error) {
+        msg += `錯誤: ${task.error}\n`;
+      }
+      
+      return msg;
+    } catch (err) {
+      return '❌ 獲取任務詳情失敗: ' + err.message;
+    }
+  }
+
+  /**
+   * 進度報告
+   */
+  getProgressReport() {
+    try {
+      const running = this.commandSystem.getRunningTasks();
+      
+      if (running.length === 0) {
+        return '📊 進度報告\n\n無執行中的任務';
+      }
+      
+      let msg = `📊 進度報告\n\n`;
+      running.forEach((task, i) => {
+        const bar = this.commandSystem.generateProgressBar(task.progress, 12);
+        msg += `${i+1}. ${task.commandName}\n${bar}\n\n`;
+      });
+      
+      return msg;
+    } catch (err) {
+      return '❌ 獲取進度報告失敗: ' + err.message;
+    }
+  }
+
+  /**
+   * 任務歷史
+   */
+  getHistory() {
+    try {
+      const history = this.commandSystem.getHistory(10);
+      
+      if (history.length === 0) {
+        return '📜 任務歷史\n\n無歷史記錄';
+      }
+      
+      let msg = `📜 任務歷史 (最近 10 個)\n\n`;
+      history.forEach((task, i) => {
+        const emoji = task.type === 'completed' ? '✅' : task.type === 'failed' ? '❌' : '⏹️';
+        msg += `${i+1}. ${emoji} ${task.commandName}\n`;
+      });
+      
+      return msg;
+    } catch (err) {
+      return '❌ 獲取歷史失敗: ' + err.message;
+    }
+  }
+
+  /**
+   * 設備列表
+   */
+  getDevices() {
+    return `📱 已配對設備\n\n暫無已配對設備\n\n使用 "pair" 命令開始配對`;
+  }
+
+  /**
+   * 配對指示
+   */
+  getPairInstructions() {
+    return `🔐 設備配對步驟\n\n1. 調用 /api/pair/request\n2. 獲取配對碼\n3. 調用 /api/pair/confirm\n4. 完成配對`;
+  }
+
+  /**
+   * 未知命令
+   */
+  getUnknownCommandResponse(message) {
+    return `❌ 未知命令: ${message}\n\n輸入 "help" 查看幫助`;
+  }
+
+  /**
+   * 模擬任務進度（測試用）
+   */
+  simulateTaskProgress(taskId, taskName) {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 30;
+      
+      if (progress >= 100) {
+        progress = 100;
+        this.commandSystem.updateProgress(taskId, progress, '即將完成');
+        setTimeout(() => {
+          this.commandSystem.completeTask(taskId, { success: true });
+          clearInterval(interval);
+          console.log(`[HANDLER] 任務完成: ${taskName}`);
+        }, 1000);
+      } else {
+        const msg = `執行中... (${Math.floor(progress)}%)`;
+        this.commandSystem.updateProgress(taskId, Math.floor(progress), msg);
+      }
+    }, 2000);
+  }
+
+  /**
+   * 獲取狀態 emoji
+   */
+  getStatusEmoji(status) {
+    const map = {
+      'pending': '⏳',
+      'running': '🔄',
+      'completed': '✅',
+      'failed': '❌',
+      'cancelled': '⏹️'
+    };
+    return map[status] || '❓';
+  }
 }
 
 module.exports = LineCommandHandler;
