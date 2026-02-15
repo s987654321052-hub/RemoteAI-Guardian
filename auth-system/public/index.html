@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoteAI Guardian 儀表板</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 頂部導航 -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🚀 RemoteAI Guardian</h1>
+                <div class="header-info">
+                    <span id="status-badge" class="status-badge">● 連接中...</span>
+                    <span id="time-display" class="time-display"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主容器 -->
+        <main class="main">
+            <!-- 系統狀態卡片 -->
+            <section class="card status-card">
+                <h2>📊 系統狀態</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="label">狀態</span>
+                        <span id="system-status" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">已配對設備</span>
+                        <span id="paired-devices" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">活躍令牌</span>
+                        <span id="active-tokens" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">啟動時間</span>
+                        <span id="start-time" class="value">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 配對管理 -->
+            <section class="card devices-card">
+                <h2>📱 配對管理</h2>
+                
+                <div class="action-buttons">
+                    <button id="generate-pair-btn" class="btn btn-primary">🔗 生成配對碼</button>
+                    <button id="refresh-devices-btn" class="btn btn-secondary">🔄 刷新設備</button>
+                </div>
+
+                <div id="pairing-code-section" class="pairing-section hidden">
+                    <h3>配對碼</h3>
+                    <div class="pairing-display">
+                        <div class="pairing-code" id="pairing-code">------</div>
+                        <span id="pairing-expires" class="expires">10 分鐘有效</span>
+                    </div>
+                    <input type="hidden" id="pairing-id">
+                    <p class="hint">在 iPhone 上訪問: <code id="pairing-url">https://...</code></p>
+                    
+                    <div class="pairing-confirm">
+                        <h3>確認配對</h3>
+                        <div class="confirm-form">
+                            <input type="text" id="device-uuid" placeholder="設備 UUID（可選）" class="input-field">
+                            <button id="confirm-pair-btn" class="btn btn-primary">✅ 確認配對</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>已配對設備</h3>
+                <div id="devices-list" class="devices-list">
+                    <p class="empty-state">暫無配對設備</p>
+                </div>
+            </section>
+
+            <!-- 令牌管理 -->
+            <section class="card tokens-card">
+                <h2>🔑 令牌管理</h2>
+                <div id="pairing-result" class="pairing-result hidden">
+                    <h3>✅ 配對成功！</h3>
+                    <div class="result-content">
+                        <p><strong>設備令牌：</strong></p>
+                        <code id="device-token" class="token-display">-</code>
+                        <button class="btn btn-small" onclick="copyToClipboard('device-token')">📋 複製</button>
+                        <p><strong>刷新令牌：</strong></p>
+                        <code id="refresh-token" class="token-display">-</code>
+                        <button class="btn btn-small" onclick="copyToClipboard('refresh-token')">📋 複製</button>
+                    </div>
+                </div>
+                <div id="tokens-list" class="tokens-list">
+                    <p class="empty-state">暫無活躍令牌</p>
+                </div>
+            </section>
+
+            <!-- 實時日誌 -->
+            <section class="card logs-card">
+                <h2>📋 實時日誌</h2>
+                <div class="log-controls">
+                    <button id="clear-logs-btn" class="btn btn-small">清除日誌</button>
+                    <button id="auto-refresh-btn" class="btn btn-small active">🔄 自動刷新</button>
+                </div>
+                <div id="logs-container" class="logs-container">
+                    <p class="empty-state">暫無日誌</p>
+                </div>
+            </section>
+
+            <!-- API 參考 -->
+            <section class="card api-card">
+                <h2>🔌 API 端點</h2>
+                <div class="api-endpoints">
+                    <div class="api-item">
+                        <code>POST /api/pair/request</code>
+                        <span>生成配對碼</span>
+                    </div>
+                    <div class="api-item">
+                        <code>POST /api/pair/confirm</code>
+                        <span>確認配對</span>
+                    </div>
+                    <div class="api-item">
+                        <code>POST /api/auth/verify</code>
+                        <span>驗證令牌</span>
+                    </div>
+                    <div class="api-item">
+                        <code>POST /api/auth/refresh</code>
+                        <span>刷新令牌</span>
+                    </div>
+                    <div class="api-item">
+                        <code>GET /api/devices</code>
+                        <span>列出設備</span>
+                    </div>
+                    <div class="api-item">
+                        <code>GET /api/status</code>
+                        <span>系統狀態</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <p>RemoteAI Guardian © 2026 | <a href="https://github.com" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

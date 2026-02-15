@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1771110831064,
+    "text": "🧪 RemoteAI Guardian 測試訊息\n\n這是一條測試訊息，確認 LINE 通知功能正常運作。",
+    "timestamp": "2026-02-14T23:13:51.064Z",
+    "status": "sent",
+    "type": "text"
+  },
+  {
+    "id": 1771110831591,
+    "text": "📊 RemoteAI Guardian 進度更新\n\n🎯 項目: RemoteAI Guardian\n📈 整體進度: 67%\n✅ 已完成: 15/15 任務\n\n🏆 完成情況:\n  • 第一階段：基礎設置 ✅\n  • 第二階段：功能擴展 ✅\n  • 第三階段：優化和部署 ✅\n\n⏰ 時間: 2026/2/15 上午7:13:51",
+    "timestamp": "2026-02-14T23:13:51.591Z",
+    "status": "sent",
+    "type": "text"
+  },
+  {
+    "id": 1771110832099,
+    "text": "⚠️ RemoteAI Guardian 系統告警\n\n🔴 告警類型: 測試告警\n📍 位置: 認證系統\n📝 訊息: 這是一條測試告警訊息\n\n🔧 建議操作:\n  1. 檢查系統日誌\n  2. 驗證連接狀態\n  3. 重新啟動服務\n\n⏰ 時間: 2026/2/15 上午7:13:52",
+    "timestamp": "2026-02-14T23:13:52.099Z",
+    "status": "sent",
+    "type": "text"
+  },
+  {
+    "id": 1771110832611,
+    "text": "✅ 任務完成！\n\n🎉 RemoteAI Guardian 系統開發完成\n\n📋 完成的任務:\n  ✅ 認證系統開發\n  ✅ Web 儀表板\n  ✅ LINE 通知集成\n  ✅ Tailscale 遠程訪問\n  ✅ Google APIs 集成\n  ✅ 自動化任務系統\n  ✅ iOS App 框架\n  ✅ 性能優化\n  ✅ 安全加固\n  ✅ Docker 部署\n\n🚀 下一步:\n  1. 生產部署\n  2. iOS App 完成開發\n  3. 監控和告警設置\n\n⏰ 時間: 2026/2/15 上午7:13:52",
+    "timestamp": "2026-02-14T23:13:52.611Z",
+    "status": "sent",
+    "type": "text"
+  },
+  {
+    "id": 1771110833113,
+    "text": "🔗 設備配對確認\n\n✅ 新設備已配對\n\n📱 設備信息:\n  設備名稱: Test iPhone\n  設備 ID: iphone-test-123\n  配對時間: 2026/2/15 上午7:13:53\n  狀態: 已確認\n\n🔑 令牌信息:\n  設備令牌有效期: 24 小時\n  刷新令牌: 長期有效\n\n🔒 安全性:\n  連接: 加密 (TLS 1.3)\n  驗證: JWT 令牌\n  地點: Tailscale 網絡",
+    "timestamp": "2026-02-14T23:13:53.113Z",
+    "status": "sent",
+    "type": "text"
+  }
+]

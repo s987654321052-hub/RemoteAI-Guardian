@@ -1,0 +1,315 @@
+📌 Windows 安裝 macOS 虛擬機與打包流程 - 快速查找
+
+═══════════════════════════════════════════════════════════════════════════
+
+✨ 完成摘要
+
+為你的 RemoteAI Guardian 項目建立了完整的多平台構建和打包系統：
+
+✅ 新增文檔 (4 個)
+   • MACOS_SETUP_GUIDE.md                    - macOS 虛擬機完整指南
+   • PACKAGING_AND_DISTRIBUTION.md           - 打包和發佈指南
+   • WINDOWS_MACOS_BUILD_GUIDE.md            - Windows 上構建 macOS 應用指南
+   • scripts/build.sh                        - 自動化構建腳本
+
+✅ 新增 GitHub Actions 工作流 (3 個)
+   • .github/workflows/build-ios-app.yml     - iOS 自動構建
+   • .github/workflows/build-macos-app.yml   - macOS 自動構建
+   • .github/workflows/release.yml           - 完整多平台發佈
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 核心建議
+
+❌ 不要在 Windows 上安裝 macOS 虛擬機
+   • 法律風險 - 違反 Apple EULA
+   • 性能問題 - 非常慢
+   • 不穩定 - 經常崩潰
+
+✅ 改用 GitHub Actions (完全合法且免費)
+   • 官方支持
+   • 自動化
+   • 免費 3000 分鐘/月
+   • 支持 iOS、macOS、Windows、Linux
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 快速開始 (5 分鐘)
+
+# 1. 推送代碼到 GitHub
+$ git add .
+$ git commit -m "Add automated builds"
+$ git push origin main
+
+# 2. 創建版本標籤
+$ git tag v1.1.0
+$ git push origin v1.1.0
+
+# 3. 查看自動構建
+訪問 https://github.com/your-repo/actions
+
+# 4. 下載構件
+每個平台都會自動構建和發佈！
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 新增文件位置
+
+C:\RemoteAI-Guardian\
+├── MACOS_SETUP_GUIDE.md              [🆕] macOS 虛擬機指南
+├── PACKAGING_AND_DISTRIBUTION.md     [🆕] 打包和發佈指南
+├── WINDOWS_MACOS_BUILD_GUIDE.md      [🆕] 完整構建指南
+├── scripts/
+│   └── build.sh                      [🆕] 自動化構建腳本
+└── .github/workflows/
+    ├── build-ios-app.yml             [🆕] iOS 工作流
+    ├── build-macos-app.yml           [🆕] macOS 工作流
+    └── release.yml                   [🆕] 發佈工作流
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+💡 三種方案對比
+
+┌────────────────┬──────────┬─────────┬──────────┬──────────────┐
+│ 方案           │ 成本     │ 難度    │ 合法性   │ 推薦度       │
+├────────────────┼──────────┼─────────┼──────────┼──────────────┤
+│ GitHub Actions │ 免費     │ ⭐     │ ✅ 合法  │ ⭐⭐⭐⭐⭐ │
+│ MacStadium     │ ~$1/h    │ ⭐⭐   │ ✅ 合法  │ ⭐⭐⭐⭐   │
+│ Mac mini       │ $600+    │ ⭐⭐⭐ │ ✅ 合法  │ ⭐⭐⭐    │
+│ KVM/QEMU       │ 免費     │ ⭐⭐⭐⭐│ ⚠️ 風險  │ ⭐⭐      │
+└────────────────┴──────────┴─────────┴──────────┴──────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+📖 文檔速查
+
+📄 MACOS_SETUP_GUIDE.md
+   • 為什麼不要在 Windows 上運行 macOS
+   • GitHub Actions (推薦方案)
+   • KVM/QEMU (Linux 用戶)
+   • MacStadium (雲端 macOS)
+   • 購買 Mac mini (本地開發)
+
+📄 PACKAGING_AND_DISTRIBUTION.md
+   • 本地構建 (iOS、macOS、Windows、Linux)
+   • GitHub Actions 自動化
+   • 多平台配置
+   • 代碼簽名和公證
+   • 發佈流程 (GitHub Releases、App Store、TestFlight)
+   • 版本管理和變更日誌
+
+📄 WINDOWS_MACOS_BUILD_GUIDE.md
+   • 完整的入門指南
+   • 視覺化流程圖
+   • 情景化教程
+   • 快速查找表
+
+📄 scripts/build.sh
+   • 一鍵本地構建腳本
+   • 支持所有平台
+   • 互動式菜單
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔄 完整工作流
+
+推送代碼
+   ↓
+GitHub Actions 自動觸發
+   ↓
+平行構建 (iOS/macOS/Windows/Linux)
+   ├─ iOS (macOS runner)         → .ipa 文件
+   ├─ macOS (macOS runner)       → .dmg 文件
+   ├─ Windows (windows runner)   → .exe 文件
+   └─ Linux (ubuntu runner)      → .AppImage/.deb
+   ↓
+自動生成發佈
+   ├─ 上傳所有構件
+   ├─ 生成校驗和
+   ├─ 生成變更日誌
+   └─ 創建 GitHub Release
+   ↓
+完成 ✅
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚙️ GitHub Actions 工作流特性
+
+build-ios-app.yml
+✓ 支持 development/staging/production 構建
+✓ 自動簽名
+✓ 導出 IPA
+✓ 上傳 TestFlight
+✓ 上傳 GitHub Releases
+
+build-macos-app.yml
+✓ 支持多個構建類型
+✓ 自動生成 DMG/ZIP
+✓ 代碼簽名和公證
+✓ Slack 通知
+✓ 上傳 GitHub Releases
+
+release.yml
+✓ 平行構建所有平台
+✓ 自動生成校驗和
+✓ 自動生成變更日誌
+✓ 創建 GitHub Release
+✓ 上傳所有構件
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🛠️ 本地構建命令
+
+使用構建腳本 (推薦):
+$ bash scripts/build.sh 1.1.0
+
+手動構建:
+$ cd auth-system
+$ npm install --save-dev electron electron-builder
+
+iOS:
+$ cd iOS
+$ xcodebuild -scheme RemoteAIGuardian -configuration Release archive
+
+macOS:
+$ npx electron-builder --mac dmg
+
+Windows:
+$ npx electron-builder --win
+
+Linux:
+$ npx electron-builder --linux AppImage deb
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔐 代碼簽名設置
+
+GitHub Secrets (Settings → Secrets and variables → Actions):
+
+APPLE_ID                 = your-apple-id@example.com
+APPLE_ID_PASSWORD        = your-app-specific-password
+ASC_PROVIDER             = your-team-id
+MAC_CERTIFICATE          = (base64 encoded .p12)
+MAC_CERTIFICATE_PWD      = certificate-password
+WIN_CSC_LINK             = (base64 encoded .pfx)
+WIN_CSC_KEY_PASSWORD     = certificate-password
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ 發佈檢查清單
+
+□ 版本號已更新
+□ 所有測試通過
+□ 代碼已審查
+□ 文檔已更新
+□ CHANGELOG 已更新
+□ 沒有 console.log
+□ 沒有調試代碼
+□ 依賴已更新 (npm audit)
+□ 密鑰未提交到 Git
+□ 標籤已創建 (git tag v1.1.0)
+□ 推送到 GitHub (git push origin v1.1.0)
+□ GitHub Actions 構建完成
+□ 所有構件已驗證
+□ 校驗和已驗證
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 常見問題
+
+Q: 我可以在 Windows 上運行 macOS 虛擬機嗎？
+A: 不推薦。法律上有風險，性能很差。用 GitHub Actions 代替。
+
+Q: GitHub Actions 對個人項目免費嗎？
+A: 公開倉庫完全免費。私有倉庫每月免費 3000 分鐘。
+
+Q: 構建需要多長時間？
+A: iOS/macOS: 10-15 分鐘
+   Windows/Linux: 5-10 分鐘
+
+Q: 如何簽名應用？
+A: GitHub Secrets 中設置證書，工作流自動簽名。
+
+Q: 如何上傳到 App Store？
+A: 編輯工作流添加 App Store Connect 上傳步驟。
+   參考: PACKAGING_AND_DISTRIBUTION.md
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 立即開始
+
+第 1 步：初始化 Git (如果尚未初始化)
+$ git init
+$ git add .
+$ git commit -m "Initial commit"
+
+第 2 步：推送到 GitHub
+$ git remote add origin https://github.com/you/remoteai-guardian.git
+$ git branch -M main
+$ git push -u origin main
+
+第 3 步：查看自動構建
+訪問 https://github.com/you/remoteai-guardian/actions
+
+第 4 步：創建第一個發佈
+$ git tag v1.0.0
+$ git push origin v1.0.0
+
+完成！GitHub Actions 現在為你自動構建和發佈應用。
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+📚 更多資源
+
+官方文檔:
+• GitHub Actions: https://docs.github.com/en/actions
+• Electron Builder: https://www.electron.build/
+• Xcode: https://help.apple.com/xcode/
+• Apple Developer: https://developer.apple.com/
+
+本項目文檔:
+• MACOS_SETUP_GUIDE.md
+• PACKAGING_AND_DISTRIBUTION.md
+• WINDOWS_MACOS_BUILD_GUIDE.md
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+💬 需要幫助？
+
+1. 查看詳細文檔
+   • WINDOWS_MACOS_BUILD_GUIDE.md (完整指南)
+   • PACKAGING_AND_DISTRIBUTION.md (打包指南)
+
+2. 檢查工作流文件
+   • .github/workflows/build-ios-app.yml
+   • .github/workflows/build-macos-app.yml
+   • .github/workflows/release.yml
+
+3. 運行本地測試
+   • bash scripts/build.sh 1.0.0
+
+4. 查看 GitHub Actions 日誌
+   • 訪問倉庫的 Actions 標籤
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+版本: 1.0.0
+最後更新: 2026/02/15
+狀態: ✅ 生產就緒
+
+祝你的應用發佈順利！🚀

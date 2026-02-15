@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  auth-system:
+    build: .
+    ports:
+      - "8888:8888"
+      - "9999:9999"
+    environment:
+      - NODE_ENV=production
+      - LINE_ACCESS_TOKEN=${LINE_ACCESS_TOKEN}
+      - LINE_USER_ID=${LINE_USER_ID}
+      - LINE_CHANNEL_ID=${LINE_CHANNEL_ID}
+      - TAILSCALE_IP=${TAILSCALE_IP}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - remoteai
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - remoteai
+
+networks:
+  remoteai:
+    driver: bridge
+
+volumes:
+  redis-data:

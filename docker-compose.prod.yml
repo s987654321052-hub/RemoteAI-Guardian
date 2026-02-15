@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: remoteai-guardian-app
+    ports:
+      - "8888:8888"
+      - "9999:9999"
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - AUTH_PORT=8888
+      - DASHBOARD_PORT=9999
+      - LINE_CHANNEL_ID=${LINE_CHANNEL_ID}
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
+      - LINE_ACCESS_TOKEN=${LINE_ACCESS_TOKEN}
+      - LINE_USER_ID=${LINE_USER_ID}
+      - TAILSCALE_IP=${TAILSCALE_IP}
+      - SECRET_KEY=${SECRET_KEY}
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://localhost:27017/remoteai-guardian
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./credentials:/app/credentials
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - remoteai
+    labels:
+      - "com.remoteai.service=app"
+      - "com.remoteai.version=1.0.0"
+
+  redis:
+    image: redis:7-alpine
+    container_name: remoteai-guardian-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - remoteai
+    labels:
+      - "com.remoteai.service=cache"
+
+networks:
+  remoteai:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local

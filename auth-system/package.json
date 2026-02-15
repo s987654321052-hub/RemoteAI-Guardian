@@ -1,0 +1,43 @@
+{
+  "name": "remoteai-guardian-auth",
+  "version": "1.0.0",
+  "description": "RemoteAI Guardian - 認證系統與整合模塊",
+  "main": "auth-system.js",
+  "scripts": {
+    "start": "node auth-system.js",
+    "dev": "nodemon auth-system.js",
+    "test": "node test-auth.js",
+    "dashboard": "node iphone-dashboard.js",
+    "line-handler": "node line-command-handler.js",
+    "start-all": "start-all-services.bat",
+    "test-integration": "node test-complete-integration.js",
+    "update-dashboard": "node test-dashboard-update.js",
+    "send-line": "node test-line-notification.js",
+    "test-google-oauth": "node test-google-oauth.js",
+    "oauth-auth": "node get-oauth-code.js",
+    "setup-app-password": "node setup-app-password.js",
+    "test-line": "node test-line.js"
+  },
+  "keywords": [
+    "authentication",
+    "iphone",
+    "tailscale",
+    "line",
+    "remoteai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
