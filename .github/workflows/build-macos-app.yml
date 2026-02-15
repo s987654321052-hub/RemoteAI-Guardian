@@ -193,37 +193,12 @@ jobs:
       if: ${{ inputs.build_type == 'production' }}
       continue-on-error: true
       run: |
-        # 這裡可以添加 TestFlight 上傳邏輯
         echo "TestFlight upload would go here"
     
-    - name: Notify Slack on success
+    - name: Build status
       if: success()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: custom
-        custom_payload: |
-          {
-            text: '✅ macOS build succeeded',
-            attachments: [{
-              color: 'good',
-              text: `Version: ${{ steps.version.outputs.VERSION }}\nBuild: ${{ steps.version.outputs.TIMESTAMP }}`
-            }]
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      run: echo "✅ macOS build succeeded"
     
-    - name: Notify Slack on failure
+    - name: Build failed
       if: failure()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: custom
-        custom_payload: |
-          {
-            text: '❌ macOS build failed',
-            attachments: [{
-              color: 'danger',
-              text: `Version: ${{ steps.version.outputs.VERSION }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
-            }]
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      run: echo "❌ macOS build failed"
