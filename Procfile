@@ -1,1 +1,1 @@
-web: node auth-system/line-webhook-simple.js
+web: npm start
