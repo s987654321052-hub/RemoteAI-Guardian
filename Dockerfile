@@ -1,4 +1,4 @@
-FROM node:24-alpine
+FROM node:20-alpine
 
 # 設置工作目錄
 WORKDIR /app
@@ -23,14 +23,14 @@ ENV NODE_ENV=production
 ENV LOG_LEVEL=info
 
 # 暴露端口
-EXPOSE 8888 9999
+EXPOSE 3000
 
 # 健康檢查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8888/api/status', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 
-# 使用 dumb-init 作為 PID 1 進程以正確處理信號
+# 使用 dumb-init 作為 PID 1 進程
 ENTRYPOINT ["dumb-init", "--"]
 
-# 啟動應用
-CMD ["node", "start.js"]
+# 啟動應用（使用 railway-start.js）
+CMD ["node", "railway-start.js"]

@@ -1,0 +1,145 @@
+╔════════════════════════════════════════════════════════════════╗
+║          RemoteAI Guardian - Railway 部署指南（已修復）           ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ 已修復的問題:
+   • 移除子進程生成（解決 ENOENT 錯誤）
+   • 統一啟動腳本：railway-start.js
+   • 更新 Procfile 和 Dockerfile
+   • 改用單進程模型，更適合 Railway
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 部署步驟:
+
+1️⃣ 提交到 Git
+   git add .
+   git commit -m "修復 Railway 部署配置"
+   git push origin main
+
+2️⃣ 在 Railway 儀表板中重新部署
+   • 登入 Railway: https://railway.app
+   • 進入你的 RemoteAI-Guardian 項目
+   • 點擊 "Deploy" 或讓它自動重新部署
+   • 等待部署完成（通常 2-3 分鐘）
+
+3️⃣ 驗證部署
+   部署完成後，查看：
+   • ✅ Logs 選項卡中沒有 ENOENT 錯誤
+   • ✅ 應用顯示為 "Running"（綠色指示燈）
+   • ✅ 公網 URL 可訪問
+
+═══════════════════════════════════════════════════════════════════
+
+📍 測試你的部署:
+
+假設你的 Railway URL 是: https://remoteai-guardian-xxxxx.up.railway.app
+
+1. 檢查健康狀態:
+   curl https://remoteai-guardian-xxxxx.up.railway.app/health
+
+2. 查看系統狀態:
+   curl https://remoteai-guardian-xxxxx.up.railway.app/api/status
+
+3. 測試 LINE Webhook:
+   curl -X POST https://remoteai-guardian-xxxxx.up.railway.app/webhook/line \
+     -H "Content-Type: application/json" \
+     -d '{"events": []}'
+
+═══════════════════════════════════════════════════════════════════
+
+🔧 文件改動說明:
+
+1. railway-start.js (新建)
+   • 簡化版啟動腳本
+   • 只在單個進程中運行（不使用 child_process）
+   • 包含認證系統和 LINE Webhook 所有功能
+   • 自動監聽 PORT 環境變數（Railway 提供）
+
+2. Procfile (已更新)
+   • 舊: web: cd auth-system && npm start
+   • 新: web: node railway-start.js
+   • 直接指向新的啟動腳本
+
+3. Dockerfile (已更新)
+   • 端口改為 3000（Railway 標準）
+   • 不再指向 start.js
+   • 健康檢查現在檢查 /health
+
+═══════════════════════════════════════════════════════════════════
+
+⚙️ Railway 環境變數配置:
+
+確保在 Railway 儀表板中設置了這些變數:
+
+必需:
+   • NODE_ENV=production
+   • PORT=3000
+
+可選（LINE 通知）:
+   • LINE_ACCESS_TOKEN=你的令牌
+   • LINE_USER_ID=你的用戶ID
+   • LINE_CHANNEL_ID=你的頻道ID
+   • LINE_CHANNEL_SECRET=你的密鑰
+
+═══════════════════════════════════════════════════════════════════
+
+🔍 故障排除:
+
+問題 1: 部署後仍顯示 ENOENT 錯誤
+解決方案:
+   • 確保提交了所有新文件到 Git
+   • 在 Railway 儀表板中點擊 "Redeploy"
+   • 檢查 Logs 確保 railway-start.js 在運行
+
+問題 2: 應用啟動後立即崩潰
+解決方案:
+   • 查看 Railway Logs
+   • 確保 package.json 中有所有必需的依賴
+   • 檢查 .env 變數是否正確設置
+
+問題 3: LINE 通知不工作
+解決方案:
+   • 確認 LINE_ACCESS_TOKEN 正確
+   • 確認 LINE_USER_ID 正確
+   • Railway Logs 中應該看到 "LINE 通知已發送"
+
+═══════════════════════════════════════════════════════════════════
+
+📝 本地測試（部署前）:
+
+1. 測試啟動腳本:
+   cd C:\RemoteAI-Guardian\auth-system
+   node railway-start.js
+
+2. 查看輸出:
+   • 應該看到 "RemoteAI Guardian 應用啟動" 訊息
+   • 應該顯示 "API 端點"
+   • 沒有 ENOENT 錯誤
+
+3. 測試 API:
+   curl http://localhost:3000/health
+   curl http://localhost:3000/api/status
+
+═══════════════════════════════════════════════════════════════════
+
+✨ 完成後的優勢:
+
+   ✅ 不再使用 child_process.spawn（避免 ENOENT）
+   ✅ 單進程運行，更容易調試
+   ✅ 完全兼容 Railway 平台
+   ✅ 自動監聽 PORT 環境變數
+   ✅ 更好的進程信號處理
+
+═══════════════════════════════════════════════════════════════════
+
+需要幫助？執行以下命令查看日誌:
+
+   # 本地測試
+   cd C:\RemoteAI-Guardian\auth-system
+   node railway-start.js
+
+   # 查看詳細輸出
+   set DEBUG=* && node railway-start.js
+
+═══════════════════════════════════════════════════════════════════

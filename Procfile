@@ -1,1 +1,1 @@
-web: cd auth-system && npm start
+web: node railway-start.js
