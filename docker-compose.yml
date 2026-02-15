@@ -4,13 +4,15 @@ services:
   auth-system:
     build: .
     ports:
-      - "8888:8888"
+      - "8080:3000"
       - "9999:9999"
     environment:
       - NODE_ENV=production
+      - PORT=3000
       - LINE_ACCESS_TOKEN=${LINE_ACCESS_TOKEN}
       - LINE_USER_ID=${LINE_USER_ID}
       - LINE_CHANNEL_ID=${LINE_CHANNEL_ID}
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
       - TAILSCALE_IP=${TAILSCALE_IP}
     volumes:
       - ./data:/app/data
@@ -18,6 +20,12 @@ services:
     restart: unless-stopped
     networks:
       - remoteai
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -28,6 +36,11 @@ services:
     restart: unless-stopped
     networks:
       - remoteai
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   remoteai:
