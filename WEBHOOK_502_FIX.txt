@@ -1,0 +1,177 @@
+╔════════════════════════════════════════════════════════════════╗
+║          LINE Webhook 502 錯誤 - 診斷與修復指南
+╚════════════════════════════════════════════════════════════════╝
+
+❌ 問題：webhook 回傳 HTTP 502 Bad Gateway
+
+✅ 已修復的問題：
+   1. 添加完整的錯誤處理
+   2. 改進 webhook 回應機制
+   3. 確保立即返回 200 給 LINE
+   4. 非同步處理事件
+
+═══════════════════════════════════════════════════════════════════
+
+🔍 502 錯誤的常見原因：
+
+1. 應用未正確啟動
+2. 應用在 Railway 上崩潰
+3. 端口配置錯誤
+4. 環境變數未設置
+5. 依賴包缺失
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 立即行動：
+
+1️⃣ 在 Railway 儀表板重新部署
+   • 進入 RemoteAI-Guardian 項目
+   • 點擊 "Redeploy" 按鈕
+   • 等待部署完成（2-3 分鐘）
+   • 查看 Logs 確認應用啟動
+
+2️⃣ 檢查 Railway 日誌
+   在 Railway 儀表板中：
+   • 點擊 "Logs" 選項卡
+   • 查看是否看到 "🚀 RemoteAI Guardian 應用啟動"
+   • 如果有紅色錯誤信息，記下來
+
+3️⃣ 確認環境變數
+   在 Railway 儀表板中：
+   • 點擊 "Variables" 或 "Settings"
+   • 確認設置了這些變數：
+     - NODE_ENV = production
+     - PORT = 3000（如果 Railway 沒有自動設置）
+     - LINE_ACCESS_TOKEN = [你的令牌]
+     - LINE_USER_ID = [你的用戶ID]
+
+4️⃣ 測試公網 URL
+   在瀏覽器打開（替換為你的 Railway URL）：
+   https://remoteai-guardian-production.up.railway.app/health
+   
+   應該看到：
+   {"status":"ok","timestamp":"...","environment":"production"}
+
+5️⃣ 重新驗證 Webhook
+   • 在 LINE Developer Console 中
+   • 再次點擊 "Verify" 按鈕
+   • 應該看到 ✅ 成功
+
+═══════════════════════════════════════════════════════════════════
+
+📝 改進的 railway-start.js 特性：
+
+✅ 立即返回 200 給 LINE（避免超時）
+✅ 非同步處理事件（不阻塞回應）
+✅ 完整的錯誤處理
+✅ 詳細的日誌輸出
+✅ 優雅的錯誤恢復
+
+═══════════════════════════════════════════════════════════════════
+
+🔧 本地測試（模擬 LINE Webhook）：
+
+測試 webhook 端點：
+
+curl -X POST http://localhost:8080/webhook/line \
+  -H "Content-Type: application/json" \
+  -d '{"events":[]}'
+
+預期回應：
+200 OK
+"OK"
+
+測試完整的事件：
+
+curl -X POST http://localhost:8080/webhook/line \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {
+        "type": "message",
+        "message": {
+          "type": "text",
+          "text": "ping"
+        },
+        "source": {
+          "userId": "你的LINE_USER_ID"
+        }
+      }
+    ]
+  }'
+
+═══════════════════════════════════════════════════════════════════
+
+🚨 如果仍然看到 502：
+
+檢查項：
+
+1. Railway 應用狀態
+   • 綠色指示燈 = 正在運行
+   • 紅色 / 灰色 = 崩潰或停止
+   • 如果崩潰，查看 Logs 找出原因
+
+2. 查看詳細日誌
+   在 Railway Logs 中應該看到：
+   
+   ✅ "🚀 RemoteAI Guardian 應用啟動"
+   ✅ "📝 環境: production"
+   ✅ "🔑 監聽端口: 3000"
+   ✅ "✅ LINE 通知已啟用"
+   
+   ❌ 如果看到任何 Error 訊息，記下來
+
+3. 檢查 PORT 環境變數
+   Railway 應該自動設置 PORT 環境變數
+   如果沒有，需要手動設置：
+   • 在 Variables 中添加 PORT=3000
+
+4. 確認公網域名配置
+   • 在 Settings > Public Networking
+   • 確認 HTTP 被選中
+   • 確認端口是 3000
+   • 確認已生成域名
+
+═══════════════════════════════════════════════════════════════════
+
+📊 Git 提交
+
+最新提交: fbaa584
+Message: 改進 railway-start.js：添加錯誤處理、修復 webhook 回應、改善日誌
+
+這個版本應該解決 502 問題。
+
+═══════════════════════════════════════════════════════════════════
+
+✅ 完整的修復流程：
+
+1. ✅ 更新了 railway-start.js（已推送到 GitHub）
+2. ⏳ 在 Railway 儀表板點擊 "Redeploy"
+3. ⏳ 等待 2-3 分鐘
+4. ⏳ 檢查 Logs 確認啟動成功
+5. ⏳ 在 LINE Developer Console 重新驗證 Webhook
+6. ✅ 應該看到 ✅ 成功
+
+═══════════════════════════════════════════════════════════════════
+
+💡 快速 Railway 命令（如果使用 Railway CLI）：
+
+查看日誌：
+   railway logs
+
+重新部署：
+   railway deploy
+
+查看環境變數：
+   railway env
+
+═══════════════════════════════════════════════════════════════════
+
+需要幫助？
+
+提供這些信息：
+1. Railway Logs 中的錯誤訊息
+2. 應用狀態（運行 / 停止 / 崩潰）
+3. 公網 URL 的 /health 回應
+
+═══════════════════════════════════════════════════════════════════

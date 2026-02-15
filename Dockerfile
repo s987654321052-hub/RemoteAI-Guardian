@@ -4,7 +4,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # 安裝系統依賴
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init curl
 
 # 複製 package files
 COPY auth-system/package*.json ./
@@ -25,12 +25,12 @@ ENV LOG_LEVEL=info
 # 暴露端口
 EXPOSE 3000
 
-# 健康檢查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+# 健康檢查（使用 curl）
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
 
 # 使用 dumb-init 作為 PID 1 進程
 ENTRYPOINT ["dumb-init", "--"]
 
-# 啟動應用（使用 railway-start.js）
+# 啟動應用（直接指向 railway-start.js）
 CMD ["node", "railway-start.js"]
