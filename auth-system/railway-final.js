@@ -40,7 +40,6 @@ app.post('/webhook/line', async (req, res) => {
 
   try {
     console.log('[WEBHOOK] LINE webhook 請求接收');
-    console.log('[WEBHOOK] Body: ' + JSON.stringify(req.body).substring(0, 100));
 
     if (!req.body || !req.body.events || req.body.events.length === 0) {
       console.log('[WEBHOOK] 無事件或空事件列表');
@@ -58,15 +57,17 @@ app.post('/webhook/line', async (req, res) => {
           const userId = event.source?.userId;
           const message = event.message.text;
 
-          console.log('[MESSAGE] 用戶: ' + userId);
-          console.log('[MESSAGE] 內容: ' + message);
-          console.log('[CHECK] LINE_USER_ID: ' + LINE_USER_ID);
-          console.log('[CHECK] 比對: ' + (userId === LINE_USER_ID ? '✅ 匹配' : '❌ 不匹配'));
+          console.log('\n========================================');
+          console.log('[MESSAGE] 用戶 ID: ' + userId);
+          console.log('[MESSAGE] 訊息內容: ' + message);
+          console.log('[MESSAGE] 設置的 USER_ID: ' + (LINE_USER_ID || '未設置'));
+          console.log('========================================\n');
 
-          if (userId !== LINE_USER_ID) {
-            console.log('[AUTH] ⚠️ 未授權用戶，跳過');
-            continue;
-          }
+          // 暫時註釋掉 USER_ID 檢查，允許所有訊息回覆（用於調試）
+          // if (userId !== LINE_USER_ID) {
+          //   console.log('[AUTH] ⚠️ 未授權用戶，跳過');
+          //   continue;
+          // }
 
           const reply = handleCommand(message);
           console.log('[REPLY] 準備發送: ' + reply.substring(0, 50));
