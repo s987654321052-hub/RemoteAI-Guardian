@@ -6,6 +6,10 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  releases: write
+
 jobs:
   create-release:
     name: Create Release
@@ -32,6 +36,12 @@ jobs:
         echo "## Built" >> RELEASE_NOTES.md
         echo "- Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> RELEASE_NOTES.md
         echo "- Commit: ${{ github.sha }}" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "## Features" >> RELEASE_NOTES.md
+        echo "- Complete iPhone + LINE integration system" >> RELEASE_NOTES.md
+        echo "- Multi-platform support (iOS, macOS, Windows, Linux)" >> RELEASE_NOTES.md
+        echo "- GitHub Actions automation" >> RELEASE_NOTES.md
+        echo "- Automated builds and releases" >> RELEASE_NOTES.md
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
