@@ -128,8 +128,9 @@ async function sendLineMessage(userId, message) {
   try {
     console.log('[SEND] 正在發送訊息到 ' + userId);
     
+    // 嘗試用 api.line.me 而不是 api.line.biz
     const response = await axios.post(
-      'https://api.line.biz/v3/bot/message/push',
+      'https://api.line.me/v2/bot/message/push',
       {
         to: userId,
         messages: [{ type: 'text', text: message }]
@@ -146,6 +147,31 @@ async function sendLineMessage(userId, message) {
     console.log('[SEND] ✅ 訊息已發送 (HTTP ' + response.status + ')');
   } catch (err) {
     console.error('[SEND] ❌ 發送失敗: ' + err.message);
+    
+    // 如果 api.line.me 失敗，試試 api.line.biz
+    if (err.message.includes('ENOTFOUND')) {
+      console.log('[SEND] 正在嘗試備用端點...');
+      try {
+        const response2 = await axios.post(
+          'https://api.line.biz/v3/bot/message/push',
+          {
+            to: userId,
+            messages: [{ type: 'text', text: message }]
+          },
+          {
+            headers: {
+              'Authorization': 'Bearer ' + LINE_ACCESS_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000
+          }
+        );
+        console.log('[SEND] ✅ 備用端點成功 (HTTP ' + response2.status + ')');
+      } catch (err2) {
+        console.error('[SEND] 備用端點也失敗: ' + err2.message);
+      }
+    }
+    
     if (err.response?.data) {
       console.error('[SEND] 詳細: ' + JSON.stringify(err.response.data));
     }
