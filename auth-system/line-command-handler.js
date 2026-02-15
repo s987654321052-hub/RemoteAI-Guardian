@@ -52,6 +52,11 @@ class LineCommandHandler {
    */
   async sendLineMessage(userId, message, quoteToken = null) {
     try {
+      if (!this.lineAccessToken) {
+        console.log('⚠️ LINE Access Token 未設置，跳過發送');
+        return false;
+      }
+
       const payload = {
         to: userId,
         messages: [{
@@ -61,17 +66,20 @@ class LineCommandHandler {
         }]
       };
 
+      // 使用正確的 LINE API endpoint
       await axios.post('https://api.line.biz/v3/bot/message/push', payload, {
         headers: {
           'Authorization': `Bearer ${this.lineAccessToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 5000
       });
 
       console.log('✅ LINE 訊息已發送');
       return true;
     } catch (error) {
-      console.error('❌ LINE 訊息發送失敗:', error.response?.data || error.message);
+      // 網絡錯誤但不中斷流程
+      console.error('⚠️ LINE 訊息發送失敗:', error.response?.data?.message || error.message);
       return false;
     }
   }
@@ -406,20 +414,50 @@ ${error.message}
    * 配置路由
    */
   setupRoutes() {
+    // 原始 body 用於簽名驗證
+    this.app.use(express.raw({ type: 'application/json' }));
+    
     /**
      * LINE Webhook 接收器
      */
     this.app.post('/webhook/line', async (req, res) => {
       const signature = req.headers['x-line-signature'];
-      const body = JSON.stringify(req.body);
+      let body;
+      
+      // 處理原始 body
+      if (typeof req.body === 'string') {
+        body = req.body;
+      } else if (Buffer.isBuffer(req.body)) {
+        body = req.body.toString('utf-8');
+      } else {
+        body = JSON.stringify(req.body);
+      }
 
-      if (!this.verifySignature(body, signature)) {
+      // 驗證簽名
+      if (!signature) {
+        console.log('⚠️ 缺少 X-Line-Signature 標頭');
+        // 開發模式：允許無簽名請求
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('📝 開發模式：跳過簽名驗證');
+        } else {
+          return res.status(403).json({ error: 'Missing signature' });
+        }
+      } else if (!this.verifySignature(body, signature)) {
         console.log('⚠️ LINE 簽名驗證失敗');
         return res.status(403).json({ error: 'Invalid signature' });
       }
+      
+      // 解析 body
+      let events = [];
+      try {
+        const parsedBody = typeof body === 'string' ? JSON.parse(body) : body;
+        events = parsedBody.events || [];
+      } catch (e) {
+        console.log('⚠️ 無法解析 webhook body:', e.message);
+        return res.status(400).json({ error: 'Invalid body format' });
+      }
 
-      const { events } = req.body;
-
+      // 處理事件
       for (const event of events) {
         if (event.type === 'message' && event.message.type === 'text') {
           const userId = event.source.userId;

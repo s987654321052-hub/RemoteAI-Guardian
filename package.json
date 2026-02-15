@@ -1,0 +1,17 @@
+{
+  "name": "remoteai-guardian",
+  "version": "1.0.0",
+  "description": "RemoteAI Guardian - AI Driven Remote Execution System",
+  "main": "auth-system/line-webhook-simple.js",
+  "scripts": {
+    "start": "node auth-system/line-webhook-simple.js",
+    "dev": "node auth-system/line-webhook-simple.js",
+    "test": "node auth-system/test-webhook-local.js"
+  },
+  "keywords": ["line", "bot", "webhook", "remote", "execution"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "18.x"
+  }
+}
